@@ -149,7 +149,7 @@ int main() {
 
             printf("Select option whose price you would like to update: ");
             scanf("%d", &admin);
-            printf("Enter the new price for selected item: \n");
+            printf("Enter the new price for selected item: ");
             scanf("%.2f", &new_price);
             printf("This item now costs AED %.2f\n", new_price);
 
@@ -173,7 +173,7 @@ int main() {
             printf("C: 5\n\n", C);
           } else
             printf("Exiting Admin Mode.\n\n");
-          printf("THANK YOU!\n\n");
+          printf("\nTHANK YOU!\n\n");
         } else {
           printf("Password incorrect. Please try again.");
           scanf("%d", &password);
