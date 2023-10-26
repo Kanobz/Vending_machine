@@ -38,9 +38,15 @@ int main() {
     printf("\nArray after removing element at index %d:\n", pos);
     print_array(arr, SIZE);
 
+    printf("\n");
     
     // Print the matrix
     print_matrix(arr2d, nRows);
+
+    /*
+    int value = 8;
+    insert_align(arr, SIZE, pos, value);
+    */
 
     // Reshaping array 
     reshape(arr, SIZE, arr2d);
@@ -96,7 +102,19 @@ void print_matrix(int mat[][nCols], int rows) {
         puts("");
     }
 }
+/*
+void insert_align(int arr[], int length, int pos, int value) {
+    if (pos < 0 || pos >= length) {
+        printf("Invalid array index. Exiting the function.\n");
+        exit(EXIT_FAILURE);
+    }
 
+    for (int i = pos; i < length - 1; i++) {
+        arr[i] = arr[i - 1];
+    }
+}
+
+*/
 void reshape(int arr[], int length, int arr2d[nRows][nCols]) {
     if (length != nRows * nCols) {
         printf("Error: Length of arr does not match nRows * nCols. Exiting the function.\n");
