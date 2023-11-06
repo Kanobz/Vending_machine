@@ -1,2 +1,2 @@
-# CSCI291_Work
+# Vending_machine
 My first repository
