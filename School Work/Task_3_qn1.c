@@ -6,7 +6,6 @@ void shuffleRecursive(int arr[], int start, int end) {
     }
 
     int mid = (start + end) / 2;
-
     
     for (int i = start; i <= mid; i++) {
         if (arr[i] % 2 != 0) {
@@ -27,16 +26,41 @@ void shuffleRecursive(int arr[], int start, int end) {
     shuffleRecursive(arr, mid + 1, end);
 }
 
+void shuffleIterative(int arr[], int size) {
+    int oddIndex = 0;
+    for (int i = 0; i < size; i++) {
+        if (arr[i] % 2 != 0) {
+            int temp = arr[i];
+            arr[i] = arr[oddIndex];
+            arr[oddIndex] = temp;
+            oddIndex++;
+        }
+    }
+}
+
 int main() {
     int arr[] = {3, 1, 4, 6, 9, 2, 5, 8, 7};
     int size = sizeof(arr) / sizeof(arr[0]);
-
+    printf("Recursive design\n");
     printf("Original array: ");
     for (int i = 0; i < size; i++) {
         printf("%d ", arr[i]);
     }
 
     shuffleRecursive(arr, 0, size - 1);
+
+    printf("\nShuffled array: ");
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+       
+    }
+    printf("\n\nIterative design\n");
+    printf("Original array: ");
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+    }
+
+    shuffleIterative(arr, size);
 
     printf("\nShuffled array: ");
     for (int i = 0; i < size; i++) {
