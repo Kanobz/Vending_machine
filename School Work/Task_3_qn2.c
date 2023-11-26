@@ -2,97 +2,110 @@
 #include <stdlib.h>
 
 typedef struct {
-    int width;
-    int height;
-    int* data;
-} Image;
+    int *InpImage;
+    int L;
+    int *Histogram;
+    int *CumulativeHist;
+    int *OutImage;
+    int Size;
+} ImageData;
 
-void readPGM(const char* filename, Image* img) {
-    FILE* file = fopen(filename, "rb");
-    if (!file) {
-        perror("Error opening file");
+void computeHistogram(ImageData *data) {
+    for (int i = 0; i < data->Size; ++i) {
+        data->Histogram[data->InpImage[i]]++;
+    }
+}
+
+void computeCumulativeHist(ImageData *data) {
+    data->CumulativeHist[0] = data->Histogram[0];
+    for (int i = 1; i <= data->L; ++i) {
+        data->CumulativeHist[i] = data->CumulativeHist[i - 1] + data->Histogram[i];
+    }
+
+    for (int i = 0; i <= data->L; ++i) {
+        data->CumulativeHist[i] = (data->CumulativeHist[i] * data->L) / data->Size;
+    }
+}
+
+void performHistogramEqualization(ImageData *data) {
+    for (int i = 0; i < data->Size; ++i) {
+        data->OutImage[i] = data->CumulativeHist[data->InpImage[i]];
+    }
+}
+
+void savePGM(const char *filename, int *pixels, int width, int height) {
+    FILE *file = fopen(filename, "w");
+    if (file == NULL) {
+        perror("Error opening file for writing");
         exit(EXIT_FAILURE);
     }
 
-    char magic[3];
-    fscanf(file, "%2s", magic);
+    fprintf(file, "P2\n");
+    fprintf(file, "%d %d\n", width, height);
+    fprintf(file, "255\n");
 
-    if (magic[0] != 'P' || magic[1] != '5') {
-        fprintf(stderr, "Invalid PGM file format\n");
-        exit(EXIT_FAILURE);
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            fprintf(file, "%d ", pixels[i * width + j]);
+        }
+        fprintf(file, "\n");
     }
-
-    fscanf(file, "%d %d", &img->width, &img->height);
-
-    int maxval;
-    fscanf(file, "%d", &maxval);
-
-    if (maxval > 255) {
-        fprintf(stderr, "Only 8-bit PGM images are supported\n");
-        exit(EXIT_FAILURE);
-    }
-
-    fgetc(file);  // Consume newline
-
-    img->data = (int*)malloc(img->width * img->height * sizeof(int));
-    fread(img->data, sizeof(int), img->width * img->height, file);
 
     fclose(file);
 }
 
-void writePGM(const char* filename, Image* img) {
-    FILE* file = fopen(filename, "wb");
-    if (!file) {
-        perror("Error opening file");
-        exit(EXIT_FAILURE);
-    }
-
-    fprintf(file, "P5\n%d %d\n255\n", img->width, img->height);
-    fwrite(img->data, sizeof(int), img->width * img->height, file);
-
-    fclose(file);
-}
-
-void histogramEqualization(Image* img) {
-    int size = img->width * img->height;
-    int L = 255;
-
-    // Step 1: Compute the histogram of the input image
-    int* histogram = (int*)calloc(L + 1, sizeof(int));
-    for (int i = 0; i < size; ++i) {
-        histogram[img->data[i]]++;
-    }
-
-    // Step 2: Calculate the cumulative histogram of the image
-    int* cumulativeHist = (int*)malloc((L + 1) * sizeof(int));
-    cumulativeHist[0] = histogram[0];
-    for (int i = 1; i <= L; ++i) {
-        cumulativeHist[i] = cumulativeHist[i - 1] + histogram[i];
-    }
-
-    // Step 2 (Optimised): Adjust the cumulative histogram values
-    for (int i = 0; i <= L; ++i) {
-        cumulativeHist[i] = (cumulativeHist[i] * L) / size;
-    }
-
-    // Step 3 (Optimised): Image Mapping
-    for (int i = 0; i < size; ++i) {
-        img->data[i] = cumulativeHist[img->data[i]];
-    }
-
-    free(histogram);
-    free(cumulativeHist);
+void freeImageData(ImageData *data) {
+    free(data->InpImage);
+    free(data->Histogram);
+    free(data->CumulativeHist);
+    free(data->OutImage);
 }
 
 int main() {
-    Image img;
-    readPGM("Rain_Tree.pgm", &img);
+    FILE *file = fopen("Rain_Tree.pgm", "r");
+    if (file == NULL) {
+        perror("Error opening file for reading");
+        return EXIT_FAILURE;
+    }
 
-    histogramEqualization(&img);
+    ImageData imageData;
+    char buffer[256];
 
-    writePGM("Equalized_Rain_Tree.pgm", &img);
+    // Read PGM header
+    fgets(buffer, sizeof(buffer), file); // Skip P2
+    fgets(buffer, sizeof(buffer), file); // Read image dimensions
+    sscanf(buffer, "%d %d", &imageData.Size, &imageData.Size);
 
-    free(img.data);
+    fgets(buffer, sizeof(buffer), file); // Skip max pixel value
+
+    // Allocate memory for image data
+    imageData.InpImage = (int *)malloc(imageData.Size * sizeof(int));
+    imageData.Histogram = (int *)calloc(256, sizeof(int));
+    imageData.L = 255; // 8-bit image
+    imageData.CumulativeHist = (int *)malloc((imageData.L + 1) * sizeof(int));
+    imageData.OutImage = (int *)malloc(imageData.Size * sizeof(int));
+
+    // Reading pixel values
+    for (int i = 0; i < imageData.Size; ++i) {
+        fscanf(file, "%d", &imageData.InpImage[i]);
+    }
+
+    fclose(file);
+
+    // Step 1: Computing the Histogram
+    computeHistogram(&imageData);
+
+    // Step 2: Computing the Cumulative Histogram
+    computeCumulativeHist(&imageData);
+
+    // Step 3: Executing the Histogram Equalization
+    performHistogramEqualization(&imageData);
+
+    // Save the result to a new PGM file
+    savePGM("Equalized_Image.pgm", imageData.OutImage, imageData.Size, imageData.Size);
+
+    // Free allocated memory
+    freeImageData(&imageData);
 
     return 0;
 }
